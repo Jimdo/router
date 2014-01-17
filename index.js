@@ -167,5 +167,7 @@ Router.prototype.dispatch = function(path){
   }
 };
 
-
+if(typeof module !== 'undefined' && typeof module.exports !== 'undefined'){
+  module.exports = Router;
+}
 
