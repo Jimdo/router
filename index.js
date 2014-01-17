@@ -1,19 +1,116 @@
+/*
+ * Heavily taken form components/router
+ * removed the `break;` that enable multiple matches for routes
+ * */
 
-/**
- * Module dependencies.
- */
+function pathtoRegexp(path, keys, options) {
+  options = options || {};
+  var sensitive = options.sensitive;
+  var strict = options.strict;
+  keys = keys || [];
 
-try {
-  var Route = require('route-component');
-} catch (err) {
-  var Route = require('route');
+  if (path instanceof RegExp) return path;
+  if (path instanceof Array) path = '(' + path.join('|') + ')';
+
+  path = path
+    .concat(strict ? '' : '/?')
+    .replace(/\/\(/g, '(?:/')
+    .replace(/(\/)?(\.)?:(\w+)(?:(\(.*?\)))?(\?)?(\*)?/g, function(_, slash, format, key, capture, optional, star){
+      keys.push({ name: key, optional: !! optional });
+      slash = slash || '';
+      return ''
+        + (optional ? '' : slash)
+        + '(?:'
+        + (optional ? slash : '')
+        + (format || '') + (capture || (format && '([^/.]+?)' || '([^/]+?)')) + ')'
+        + (optional || '')
+        + (star ? '(/*)?' : '');
+    })
+    .replace(/([\/.])/g, '\\$1')
+    .replace(/\*/g, '(.*)');
+
+  return new RegExp('^' + path + '$', sensitive ? '' : 'i');
+};
+
+
+function Route(path) {
+  this.path = path;
+  this.keys = [];
+  this.regexp = pathtoRegexp(path, this.keys);
+  this._callbacks= [];
 }
 
 /**
- * Expose `Router`.
+ * Add before `fn`.
+ *
+ * @param {Function} fn
+ * @return {Route} self
+ * @api public
  */
 
-module.exports = Router;
+Route.prototype.callback= function(fn){
+  this._callbacks.push(fn);
+  return this;
+};
+
+/**
+ * Invoke callbacks for `type` with `args`.
+ *
+ * @param {String} type
+ * @param {Array} args
+ * @api public
+ */
+
+Route.prototype.call = function(args){
+  args = args || [];
+  var fns = this._callbacks;
+  if (!fns) throw new Error('invalid type');
+  for (var i = 0; i < fns.length; i++) {
+    fns[i].apply(null, args);
+  }
+};
+
+/**
+ * Check if `path` matches this route,
+ * returning `false` or an object.
+ *
+ * @param {String} path
+ * @return {Object}
+ * @api public
+ */
+
+Route.prototype.match = function(path){
+  var keys = this.keys;
+  var qsIndex = path.indexOf('?');
+  var pathname = ~qsIndex ? path.slice(0, qsIndex) : path;
+  var m = this.regexp.exec(pathname);
+  var params = [];
+  var args = [];
+
+  if (!m) return false;
+
+  for (var i = 1, len = m.length; i < len; ++i) {
+    var key = keys[i - 1];
+
+    var val = 'string' == typeof m[i]
+      ? decodeURIComponent(m[i])
+      : m[i];
+
+    if (key) {
+      params[key.name] = undefined !== params[key.name]
+        ? params[key.name]
+        : val;
+    } else {
+      params.push(val);
+    }
+
+    args.push(val);
+  }
+
+  params.args = args;
+  return params;
+};
+
 
 /**
  * Initialize a new Router.
@@ -43,11 +140,10 @@ function Router() {
  * @api public
  */
 
-Router.prototype.get = function(path, before, after){
+Router.prototype.get = function(path, callback){
   var route = new Route(path);
   this.routes.push(route);
-  if (before) route.before(before);
-  if (after) route.after(after);
+  if (callback) route.callback(callback);
   return route;
 };
 
@@ -61,26 +157,15 @@ Router.prototype.get = function(path, before, after){
 
 Router.prototype.dispatch = function(path){
   var ret;
-  this.teardown();
   for (var i = 0; i < this.routes.length; i++) {
     var route = this.routes[i];
     if (ret = route.match(path)) {
       this.route = route;
       this.args = ret.args;
-      route.call('before', ret.args);
-      break;
+      route.call(ret.args);
     }
   }
 };
 
-/**
- * Invoke teardown callbacks of previous route.
- *
- * @api private
- */
 
-Router.prototype.teardown = function(){
-  var route = this.route;
-  if (!route) return;
-  route.call('after', this.args);
-};
+
