@@ -15,7 +15,7 @@ function pathtoRegexp(path, keys, options) {
   path = path
     .concat(strict ? '' : '/?')
     .replace(/\/\(/g, '(?:/')
-    .replace(/(\/)?(\.)?:(\w+)(?:(\(.*?\)))?(\?)?(\*)?(#)?(\*)?/g, function(_, slash, format, key, capture, optional, star){
+    .replace(/(\/)?(\.)?:(\w+)(?:(\(.*?\)))?(\?)?(\*)?/g, function(_, slash, format, key, capture, optional, star){
       keys.push({ name: key, optional: !! optional });
       slash = slash || '';
       return ''
