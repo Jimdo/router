@@ -11,7 +11,7 @@ describe('Router#get(path)', function(){
 })
 
 describe('Router#dispatch(path)', function(){
-  it('should invoke the first matching route', function(done){
+  it('should invoke all matching routes', function(done){
     var router = new Router;
 
     router.get('/user', function(){
@@ -21,10 +21,76 @@ describe('Router#dispatch(path)', function(){
     router.get('/user/:id/:page', function(id, page){
       assert('5' == id);
       assert('posts' == page);
-      done();
+    });
+
+    router.get('/user/:id/:page', function(id, page){
+      assert('5' == id);
+      assert('posts' == page);
+      done()
     });
 
     router.dispatch('/user/5/posts');
-  })
+  });
 
+  it('should work with search (?) ', function(done){
+    var router = new Router;
+
+    router.get('/user', function(){
+      assert(false && 'should not be invoked');
+    });
+
+    router.get('/user/:id/:page', function(id, page){
+      assert('5' == id);
+      assert('posts' == page);
+    });
+
+    router.get('/user/:id/:page', function(id, page){
+      assert('5' == id);
+      assert('posts' == page);
+      done()
+    });
+
+    router.dispatch('/user/5/posts?foo=bar');
+  });
+
+  it('should work with hash (#) ', function(done){
+    var router = new Router;
+
+    router.get('/user', function(){
+      assert(false && 'should not be invoked');
+    });
+
+    router.get('/user/:id/:page', function(id, page){
+      assert('5' == id);
+      assert('posts' == page);
+    });
+
+    router.get('/user/:id/:page', function(id, page){
+      assert('5' == id);
+      assert('posts' == page);
+      done()
+    });
+
+    router.dispatch('/user/5/posts#foo=bar');
+  });
+  it('should work with search (?) and hash (#) ', function(done){
+    var router = new Router;
+
+    router.get('/user', function(){
+      assert(false && 'should not be invoked');
+    });
+
+    router.get('/user/:id/:page', function(id, page){
+      assert('5' == id);
+      assert('posts' == page);
+    });
+
+    router.get('/user/:id/:page', function(id, page){
+      assert('5' == id);
+      assert('posts' == page);
+      done()
+    });
+
+    router.dispatch('/user/5/posts?baz=buz#foo=bar');
+  });
 })

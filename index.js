@@ -15,7 +15,7 @@ function pathtoRegexp(path, keys, options) {
   path = path
     .concat(strict ? '' : '/?')
     .replace(/\/\(/g, '(?:/')
-    .replace(/(\/)?(\.)?:(\w+)(?:(\(.*?\)))?(\?)?(\*)?/g, function(_, slash, format, key, capture, optional, star){
+    .replace(/(\/)?(\.)?:(\w+)(?:(\(.*?\)))?(\?)?(\*)?(#)?(\*)?/g, function(_, slash, format, key, capture, optional, star){
       keys.push({ name: key, optional: !! optional });
       slash = slash || '';
       return ''
@@ -81,8 +81,7 @@ Route.prototype.call = function(args){
 
 Route.prototype.match = function(path){
   var keys = this.keys;
-  var qsIndex = path.indexOf('?');
-  var pathname = ~qsIndex ? path.slice(0, qsIndex) : path;
+  var pathname = path.split('?')[0].split('#')[0];
   var m = this.regexp.exec(pathname);
   var params = [];
   var args = [];
