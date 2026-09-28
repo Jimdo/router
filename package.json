@@ -18,5 +18,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/component/router.git"
+  },
+  "volta": {
+    "node": "24.21.0",
+    "npm": "12.1.0"
   }
 }
